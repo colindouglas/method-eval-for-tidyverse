@@ -1,0 +1,52 @@
+# EP17 - Detection Capabilities
+Evaluation of Detection Capability for Clinical Laboratory Measurement Procedures
+
+This work is based on EP17-A2, June 2012.
+
+## Appendix A
+Evaluation of Limits of Blank and Detection by the Classical Approach
+
+```{r Setup, echo = FALSE}
+library(tidyverse)
+```
+
+
+```{r Table A1}
+# Table A1. Observed Blank Sample Results for Reagent Lot 1 (Units are pg/mL)
+table_a1 <- tibble(
+  day = rep(1:3, each = 4),
+  replicate = rep(1:4, times = 3),
+  blank_1 = c( 2.6, -0.8, 5.5, 6.0, 4.5, 0.6, -2.3,  3.4, 5.9, 7.6,  4.1, -1.4),
+  blank_2 = c( 1.0,  2.9, 4.9, 8.0, 6.9, 5.0,  3.5,  1.2, 6.5, 5.6, -2.2,  2.3),
+  blank_3 = c(-4.4, -3.4, 7.0, 6.9, 4.3, 3.2, -1.4,  4.2, 5.9, 7.6,  3.8,  5.8),
+  blank_4 = c( 1.5, -1.9, 5.1, 5.7, 4.1, 4.5, -0.6,  0.5, 5.4, 7.6,  4.4,  6.6),
+  blank_5 = c( 1.2, -0.7, 6.1, 5.1, 4.8, 3.3, -2.8, -1.4, 8.7, 3.6,  5.1,  3.5)
+)
+```
+
+```{r Table A2}
+# Table A2. Observed Low Level Sample Results for Reagent Lot 1 (Units are pg/mL)
+table_a2 <- tibble(
+  day = rep(1:3, each = 4),
+  replicate = rep(1:4, times = 3),
+  blank_1 = c(21.0, 22.8, 28.2, 25.9, 26.4, 28.3, 20.7, 21.9, 24.7, 22.5, 28.5, 29.2),
+  blank_2 = c(13.3, 12.6, 18.2, 14.7, 17.8, 14.0, 14.1, 12.5, 11.3, 12.2, 16.2, 13.9),
+  blank_3 = c(6.1,  3.2,  3.9, 1.4, 3.1, 4.1, 1.0, 3.4, 0.1,  0.4, 2.9, -1.6),
+  blank_4 = c(4.0, 11.5,  4.5, 3.6, 4.4, 6.8, 8.1, 4.2, 3.7,  3.7, 5.3,  4.5),
+  blank_5 = c(4.0,  6.2, -0.2, 2.3, 1.6, 2.6, 6.4, 5.7, 4.2,  3.7, 1.4,  1.5) 
+)
+```
+
+```{r Table A3}
+# Table A1. Observed Blank Sample Results for Reagent Lot 2 (Units are pg/mL)
+table_a2 <- tibble(
+  day = rep(1:3, each = 4),
+  replicate = rep(1:4, times = 3),
+  blank_1 = c(4.6,  4.1,  1.6, 3.7, 2.2, 0.7, 4.6, 2.6, 1.1, -4.4, 0.9,  0.7),
+  blank_2 = c(9.2,  8.3,  4.8, 5.4, 4.8, 6.3, 5.4, 9.6, 7.7,  3.1, 6.1,  10.0),
+  blank_3 = c(6.1,  3.2,  3.9, 1.4, 3.1, 4.1, 1.0, 3.4, 0.1,  0.4, 2.9, -1.6),
+  blank_4 = c(4.0, 11.5,  4.5, 3.6, 4.4, 6.8, 8.1, 4.2, 3.7,  3.7, 5.3,  4.5),
+  blank_5 = c(4.0,  6.2, -0.2, 2.3, 1.6, 2.6, 6.4, 5.7, 4.2,  3.7, 1.4,  1.5) 
+)
+```
+
