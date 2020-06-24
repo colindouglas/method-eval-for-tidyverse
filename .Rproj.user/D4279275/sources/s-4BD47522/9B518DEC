@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1593009867825.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1437693707",
+    "id" : "9B518DEC",
+    "lastKnownWriteTime" : 1593009771,
+    "last_content_update" : 1593009771,
+    "path" : "~/projects/method-eval-for-tidyverse/style.css",
+    "project_path" : "style.css",
+    "properties" : {
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "css"
+}

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1593009854269.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3226913806",
+    "id" : "7EDC62EF",
+    "lastKnownWriteTime" : 1593009771,
+    "last_content_update" : 1593009771,
+    "path" : "~/projects/method-eval-for-tidyverse/05-summary.Rmd",
+    "project_path" : "05-summary.Rmd",
+    "properties" : {
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
