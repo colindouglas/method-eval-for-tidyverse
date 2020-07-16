@@ -3,50 +3,159 @@ Evaluation of Detection Capability for Clinical Laboratory Measurement Procedure
 
 This work is based on EP17-A2, June 2012.
 
-## Appendix A
+Simple, elegant code with minimal duplication that can be adapted for other uses.
+
+# Appendix A
 Evaluation of Limits of Blank and Detection by the Classical Approach
 
 ```{r Setup, echo = FALSE}
 library(tidyverse)
 ```
 
-
+## Table A1
+Observed Blank Sample Results for Reagent Lot 1 (Units are pg/mL)
 ```{r Table A1}
 # Table A1. Observed Blank Sample Results for Reagent Lot 1 (Units are pg/mL)
 table_a1 <- tibble(
   day = rep(1:3, each = 4),
   replicate = rep(1:4, times = 3),
-  blank_1 = c( 2.6, -0.8, 5.5, 6.0, 4.5, 0.6, -2.3,  3.4, 5.9, 7.6,  4.1, -1.4),
-  blank_2 = c( 1.0,  2.9, 4.9, 8.0, 6.9, 5.0,  3.5,  1.2, 6.5, 5.6, -2.2,  2.3),
-  blank_3 = c(-4.4, -3.4, 7.0, 6.9, 4.3, 3.2, -1.4,  4.2, 5.9, 7.6,  3.8,  5.8),
-  blank_4 = c( 1.5, -1.9, 5.1, 5.7, 4.1, 4.5, -0.6,  0.5, 5.4, 7.6,  4.4,  6.6),
-  blank_5 = c( 1.2, -0.7, 6.1, 5.1, 4.8, 3.3, -2.8, -1.4, 8.7, 3.6,  5.1,  3.5)
+  `Blank 1` = c( 2.6, -0.8, 5.5, 6.0, 4.5, 0.6, -2.3,  3.4, 5.9, 7.6,  4.1, -1.4),
+  `Blank 2` = c( 1.0,  2.9, 4.9, 8.0, 6.9, 5.0,  3.5,  1.2, 6.5, 5.6, -2.2,  2.3),
+  `Blank 3` = c(-4.4, -3.4, 7.0, 6.9, 4.3, 3.2, -1.4,  4.2, 5.9, 7.6,  3.8,  5.8),
+  `Blank 4` = c( 1.5, -1.9, 5.1, 5.7, 4.1, 4.5, -0.6,  0.5, 5.4, 7.6,  4.4,  6.6),
+  `Blank 5` = c( 1.2, -0.7, 6.1, 5.1, 4.8, 3.3, -2.8, -1.4, 8.7, 3.6,  5.1,  3.5)
 )
+
 ```
 
+## Table A2
+Observed Low Level Sample Results for Reagent Lot 1 (Units are pg/mL)
 ```{r Table A2}
 # Table A2. Observed Low Level Sample Results for Reagent Lot 1 (Units are pg/mL)
 table_a2 <- tibble(
   day = rep(1:3, each = 4),
   replicate = rep(1:4, times = 3),
-  blank_1 = c(21.0, 22.8, 28.2, 25.9, 26.4, 28.3, 20.7, 21.9, 24.7, 22.5, 28.5, 29.2),
-  blank_2 = c(13.3, 12.6, 18.2, 14.7, 17.8, 14.0, 14.1, 12.5, 11.3, 12.2, 16.2, 13.9),
-  blank_3 = c(6.1,  3.2,  3.9, 1.4, 3.1, 4.1, 1.0, 3.4, 0.1,  0.4, 2.9, -1.6),
-  blank_4 = c(4.0, 11.5,  4.5, 3.6, 4.4, 6.8, 8.1, 4.2, 3.7,  3.7, 5.3,  4.5),
-  blank_5 = c(4.0,  6.2, -0.2, 2.3, 1.6, 2.6, 6.4, 5.7, 4.2,  3.7, 1.4,  1.5) 
+  `Low 1` = c(21.0, 22.8, 28.2, 25.9, 26.4, 28.3, 20.7, 21.9, 24.7, 22.5, 28.5, 29.2),
+  `Low 2` = c(13.3, 12.6, 18.2, 14.7, 17.8, 14.0, 14.1, 12.5, 11.3, 12.2, 16.2, 13.9),
+  `Low 3` = c(12.8, 12.9, 17.4, 16.0, 15.9, 14.1, 11.3,  9.4, 10.6, 13.6, 17.6, 14.9),
+  `Low 4` = c(17.3, 19.2, 21.5, 22.2, 24.1, 25.8, 16.0, 16.4, 24.9, 23.8, 22.1, 26.1),
+  `Low 5` = c(19.2, 22.7, 28.3, 26.2, 25.1, 30.3, 23.4, 19.2, 26.3, 23.1, 27.5, 30.1)
 )
 ```
 
+## Table A3
+Observed Blank Sample Results for Reagent Lot 2 (Units are pg/mL)
 ```{r Table A3}
-# Table A1. Observed Blank Sample Results for Reagent Lot 2 (Units are pg/mL)
-table_a2 <- tibble(
+# Table A3. Observed Blank Sample Results for Reagent Lot 2 (Units are pg/mL)
+table_a3 <- tibble(
   day = rep(1:3, each = 4),
   replicate = rep(1:4, times = 3),
-  blank_1 = c(4.6,  4.1,  1.6, 3.7, 2.2, 0.7, 4.6, 2.6, 1.1, -4.4, 0.9,  0.7),
-  blank_2 = c(9.2,  8.3,  4.8, 5.4, 4.8, 6.3, 5.4, 9.6, 7.7,  3.1, 6.1,  10.0),
-  blank_3 = c(6.1,  3.2,  3.9, 1.4, 3.1, 4.1, 1.0, 3.4, 0.1,  0.4, 2.9, -1.6),
-  blank_4 = c(4.0, 11.5,  4.5, 3.6, 4.4, 6.8, 8.1, 4.2, 3.7,  3.7, 5.3,  4.5),
-  blank_5 = c(4.0,  6.2, -0.2, 2.3, 1.6, 2.6, 6.4, 5.7, 4.2,  3.7, 1.4,  1.5) 
+  `Blank 1` = c(4.6,  4.1,  1.6, 3.7, 2.2, 0.7, 4.6, 2.6, 1.1, -4.4, 0.9,  0.7),
+  `Blank 2` = c(9.2,  8.3,  4.8, 5.4, 4.8, 6.3, 5.4, 9.6, 7.7,  3.1, 6.1,  10.0),
+  `Blank 3` = c(6.1,  3.2,  3.9, 1.4, 3.1, 4.1, 1.0, 3.4, 0.1,  0.4, 2.9, -1.6),
+  `Blank 4` = c(4.0, 11.5,  4.5, 3.6, 4.4, 6.8, 8.1, 4.2, 3.7,  3.7, 5.3,  4.5),
+  `Blank 5` = c(4.0,  6.2, -0.2, 2.3, 1.6, 2.6, 6.4, 5.7, 4.2,  3.7, 1.4,  1.5) 
 )
 ```
 
+## Table A4
+Observed Low Level Sample Results for Reagent Lot 2 (Units are pg/mL)
+```{r Table A4}
+# Table A4. Observed Low Level Sample Results for Reagent Lot 2 (Units are pg/mL)
+table_a4 <- tibble(
+  day = rep(1:3, each = 4),
+  replicate = rep(1:4, times = 3),
+  `Low 1` = c(22.0, 22.5, 21.8, 22.1, 20.3, 21.0, 25.3, 26.0, 27.2, 25.1, 25.3, 25.3),
+  `Low 2` = c(15.6, 21.2, 14.8, 14.9, 16.0, 15.8, 21.6, 22.8, 15.3, 18.7, 18.3, 19.5),
+  `Low 3` = c(13.0, 15.9,  9.0,  7.0, 13.4,  8.5, 16.3, 18.1, 12.4, 11.1, 11.3, 10.1),
+  `Low 4` = c(18.8, 17.6, 14.1, 14.9, 19.2, 15.8, 19.8, 21.4, 18.0, 18.0, 19.6, 23.1),
+  `Low 5` = c(32.9, 30.4, 29.4, 27.6, 27.7, 30.6, 31.4, 30.4, 32.5, 28.9, 29.8, 35.1)
+)
+```
+
+## Tidy Table Cleanup
+Before we move on, we can make our job significantly easier going forward by reorganizing our tables into a tidy, rowwise format. 
+
+```{r Cleanup Tables A1-A4 into tidy format}
+
+# Add the reagent lots, pivot to a longer format, and convert non-value columns to factors
+tables_a14 <- map2_dfr(.x = list(table_a1, table_a2, table_a3, table_a4),  # The tables we need to clean up
+                     .y = list("Lot 1", "Lot 1", "Lot 2", "Lot 2"),  # The lots of reagent that map to each of the tables
+                     .f = ~ mutate(.x, reagent_lot = .y) %>%
+                       pivot_longer(cols = starts_with(c("Blank", "Low")), 
+                                    names_to = "sample", 
+                                    values_to = "value")) %>%
+  separate(sample, into = c("sample_type", "sample_number"), sep = " ", remove = FALSE) %>%
+  mutate_at(vars(-value), as.factor)
+
+glimpse(tables_a14)
+
+```
+
+## Table A5
+Rank Positions and LoB from Blank Sample Test Results
+```{r Table A5}
+
+alpha <- 0.05  # Type I error risk
+pct_B <- 1 - alpha
+
+B <- nlevels(tables_a14$day) *        # Number of days
+  nlevels(tables_a14$sample_number) * # Number of unique samples
+  nlevels(tables_a14$replicate)       # Number of replicates
+
+rank_position <- 0.5 + (B * pct_B)
+
+# Reproduce table A5  
+tables_a14 %>%
+  group_by(reagent_lot, sample_type) %>%
+  mutate(rank_position = rank(value, ties.method = "random")) %>%
+  filter(sample_type == "Blank",
+        rank_position %in% 56:60) %>% 
+  ungroup() %>%
+  arrange(sample_type, reagent_lot, rank_position) %>%
+  select(rank_position, reagent_lot, value) %>%
+  pivot_wider(names_from = reagent_lot, values_from = value)
+
+# Type 2 quantiles provide averaging at discontinuities
+limits <- tables_a14 %>%
+  group_by(reagent_lot, sample_type) %>%
+    filter(sample_type == "Blank") %>%
+  summarize(LoB = quantile(value, 1 - alpha, type = 2), .groups = "drop")  
+
+# Confirm we've reproduced the values in the text
+stopifnot(near(limits$LoB, c(7.6, 9.4)))
+
+limits
+```
+
+## Table A6
+SDs and LoD Calcuations From Low Level Sample Test Results
+```{r Table A6}
+
+z <- qnorm(1-alpha)  # 95th percentile of normal distribution
+#z <- round(z, digits = 3)
+
+# Degrees of freedom, total measurements less the number of unique samples
+df <- B - nlevels(tables_a14$sample_number)
+
+# "Multiplier factor" as per eqn. 6
+c_p = z / (1 - ( 1 / (4 * df)))
+
+
+table_a6 <- tables_a14 %>%
+  filter(sample_type == "Low") %>%
+  group_by(sample, reagent_lot) %>%
+  summarize(n = n(), SD = sd(value), .groups = "drop") %>%
+  arrange(reagent_lot)
+
+table_a6
+
+table_a6 %>% 
+  group_by(reagent_lot) %>%
+  summarize(SD_L = sqrt(sum((n - 1) * SD^2) / sum(n-1)), .groups = "drop") %>%
+  left_join(limits, by = "reagent_lot") %>%
+  mutate(LoB + c_p * SD_L)
+
+## I believe there to be an error in this table - CD, 16-July-2020
+
+```
