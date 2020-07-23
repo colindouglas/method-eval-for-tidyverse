@@ -241,6 +241,7 @@ stopifnot(
 ```
 
 ## Appendix B
+Evaluation of Limit of Detection by the Precision Profile Approach
 
 ### Table B1
 Observed Within-Laboratory Precision and Mean Concentration for All Samples
@@ -330,6 +331,7 @@ LoD <- coefficients %>%
 ```
 
 ### Table B2
+Trial LoD Values vs MC
 ```{r Table B2, rows.print = 19}
 
 table_b2 <- tibble(
@@ -361,5 +363,89 @@ table_b2
 table_b2 %>%
   filter(!bias) %>%
   select(reagent_lot, LoD = trial_LoD)
+
+```
+
+## Appendix C
+Evaluation of Limit of Detection by the Probit Approach
+
+### Table C1
+Observed Proportions of Positive Test Results With the Planned Dilutions
+```{r Table C1}
+
+table_c1 <- tibble(
+  concentration = c(0.000, 0.025, 0.050, 0.150, 0.300, 0.500),
+  positive_total.lot1 = c("0/22", "23/32", "29/32", "32/32", "32/32", "32/32"),
+  positive_total.lot2 = c("0/22", "28/32", "32/32", "32/32", "32/32", "32/32"),
+  positive_total.lot3 = c("0/22", "27/32", "32/32", "32/32", "32/32", "32/32"),
+  hit_rate.lot1 = map_dbl(positive_total.lot1, ~ eval(parse(text = .))),  # This is a quick (lazy) way of
+  hit_rate.lot2 = map_dbl(positive_total.lot2, ~ eval(parse(text = .))),  # evaluating the fractions in
+  hit_rate.lot3 = map_dbl(positive_total.lot3, ~ eval(parse(text = .))))  # the first three columns.
+
+table_c1
+```
+
+### Table C2
+Observed Proportions of Positive Test Results With Additional Dilutions
+```{r Table C2}
+
+table_c2 <- tibble(
+  concentration = c(0.006, 0.014),
+  positive_total.lot1 = c("11/30", "15/30"),
+  positive_total.lot2 = c("12/30", "22/30"),
+  positive_total.lot3 = c("22/34", "31/34"),
+  hit_rate.lot1 = map_dbl(positive_total.lot1, ~ eval(parse(text = .))),  # This is a quick (lazy) way of
+  hit_rate.lot2 = map_dbl(positive_total.lot2, ~ eval(parse(text = .))),  # evaluating the fractions in
+  hit_rate.lot3 = map_dbl(positive_total.lot3, ~ eval(parse(text = .))))  # the first three columns.
+
+table_c2
+```
+
+### Tidy Table Cleanup
+```{r Table C2}
+
+tables_c12 <- table_c1 %>%
+  bind_rows(table_c2) %>% 
+  select(-starts_with("positive_total.lot")) %>%
+  pivot_longer(-concentration) %>%
+  separate(name, into = c("name", "reagent_lot"), sep = "\\.") %>%
+  pivot_wider(names_from = name, values_from = value) %>%
+  mutate(reagent_lot = str_replace(reagent_lot, "lot", "Lot ")) %>%
+  arrange(reagent_lot, concentration)
+```
+
+
+### Table C3
+```{r Table C3}
+
+df <- tables_c12 %>%
+  filter(reagent_lot == "Lot 2")
+
+probit_model <- glm(formula = df$hit_rate ~ df$concentration, family = quasibinomial(link = "probit"))
+
+intercept <- coef(probit_model)[[1]]
+slope <- coef(probit_model)[[2]]
+
+predict(probit_model, newdata = tibble("concentration" = 0.05), type = "response")
+
+invlink_fn <- function(x) pnorm(x * slope + intercept)
+
+df %>%
+  ggplot(aes(x = concentration, y = hit_rate)) +
+  geom_point() +
+  scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1), limits = c(0.001, 10)) +
+  geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
+              method = "glm", method.args = list(family = quasibinomial(link = "probit"))) +
+  stat_function(fun = invlink_fn, color = "red") +
+  geom_hline(yintercept = 0.95, lty = 2) +
+  geom_vline(xintercept = 0.033, lty = 2) +
+  coord_cartesian(xlim = c(0.001, 0.5))
+
+
+p <- ggplot(df, aes(x = concentration, y = hit_rate)) + 
+    geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
+              method = "glm", method.args = list(family = quasibinomial(link = "probit")))
+
+
 
 ```
