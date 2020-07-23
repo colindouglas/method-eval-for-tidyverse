@@ -211,7 +211,6 @@ limits_parametric
 ```
 
 
-
 ```{r Appendix A Error Checking, echo = FALSE, include = FALSE}
 # Confirm we've reproduced the values in the text
 stopifnot(
@@ -239,4 +238,128 @@ stopifnot(
     c(13.9, 13.0)    # Values according to my math  
     # c(13.9, 13.2)  # Values according to document
   ))
+```
+
+## Appendix B
+
+### Table B1
+Observed Within-Laboratory Precision and Mean Concentration for All Samples
+
+```{r Table B1}
+
+table_b1 <- tibble(
+  sample_id = LETTERS[1:6],
+  mean.lot1 = c(0.69, 1.42, 2.65, 4.08, 6.08, 10.36),
+  SD_WL.lot1 = c(0.39, 0.39, 0.46, 0.55, 0.64, 1.12),
+  mean.lot2 = c(0.78, 1.73, 2.89, 3.82, 6.33, 10.92), 
+  SD_WL.lot2 = c(0.29, 0.54, 0.55, 0.63, 0.82, 1.38))
+
+table_b1
+
+```
+
+### Tidy Table Cleanup
+```{r Tidy Table Cleanup, Table B1, rows.print = 12}
+
+table_b1 <- table_b1 %>%
+  pivot_longer(-sample_id) %>%
+  separate(name, sep = "\\.", into = c("name", "reagent_lot")) %>%
+  pivot_wider(names_from = name, values_from = value) %>%
+  mutate(reagent_lot = str_replace(reagent_lot, "lot", "Lot ")) %>%
+  mutate_if(is.character, factor)
+
+glimpse(table_b1)
+```
+
+### Figure B1
+Precision Profiles of Within-Laboratory Precision (SD_WL) vs Measurand Concentration With Second-Order Polynomial Model Fit Overlays
+
+```{r Figure B1}
+
+fits <- table_b1 %>% 
+  group_by(reagent_lot) %>%
+  do(poly_fit = lm(formula = .$SD_WL ~ poly(.$mean, 2, raw = TRUE)))
+
+# These are the same coefficients that Excel returns
+# Presumably this is what the guideline means when it says 'done using a spreadsheet'
+# They differ from the coefficients reported in the guideline
+
+fits$poly_fit
+
+# Lot 1 Reported:    0.3741 / 0.0149 / 0.0055
+# Lot 1 Calculated:  0.3756 / 0.0137 / 0.0056
+# Lot 2 Reported:    0.2801 / 0.0817 / 0.0017
+# Lot 2 Calculated:  0.3086 / 0.0747 / 0.0020
+
+table_b1 %>%
+  ggplot(aes(x = mean, y = SD_WL)) +
+  geom_point(aes(color = reagent_lot, shape = reagent_lot), size = 3) +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 2), aes(color = reagent_lot, lty = reagent_lot), se = FALSE) +
+  scale_shape_manual(values = c("diamond", "square"), name = "") +
+  scale_color_discrete(name = "") +
+  scale_x_continuous(name = "[Measurand] (ng/mL)",   limits = c(0, 12),  breaks = seq(0, 12,  by = 2)) +
+  scale_y_continuous(name = "Within-Lab SD (ng/mL)", limits = c(0, 1.6), breaks = seq(0, 1.6, by = 0.2)) +
+  scale_linetype_manual(values = c(1, 2), name = "")
+
+```
+
+### Equations B1-B3
+```{r Equations B1-B3}
+
+# Unable to calculate directly (either in R or via Excel), so input from text
+coefficients <- tribble(
+  ~ reagent_lot, ~ C0, ~ C1, ~ C2,
+  "Lot 1", 0.3741, 0.0149, 0.0055, # From text
+# "Lot 1", 0.3756, 0.0137, 0.0056, # Calculated
+  "Lot 2", 0.2801, 0.0817, 0.0017) # From text
+# "Lot 2", 0.3086, 0.0747, 0.0020) # Calculated
+
+
+N <- 80  # Measurements per sample
+K <- 6   # Number of samples
+N_tot <- N * K  # Total measurements
+alpha <- 0.05
+Z <- qnorm(1 - alpha)
+c_p <- Z / ( 1 - ( 1 / (4 * (N_tot - K))))
+
+LoB <- 0.51  # From section 5.4.3.2
+
+LoD <- coefficients %>%
+  mutate(LoD = LoB + c_p * (C0 + C1 * LoB + C2 * LoB^2))
+
+```
+
+### Table B2
+```{r Table B2, rows.print = 19}
+
+table_b2 <- tibble(
+  mc = c(seq(from = 0.5, to = 1.3, by = 0.1), 
+         seq(from = 1.1, to = 1.2, by = 0.01)),
+  SD_WL.lot1 = c(0.383, 0.385, 0.387, 0.390, 0.392, 0.395, 0.397, 0.400, 0.403, 
+                 0.397, 0.397, 0.398, 0.398, 0.398, 0.399, 0.399, 0.399, 0.399, 0.400, 0.400),
+  SD_WL.lot2 = c(0.348, 0.355, 0.363, 0.371, 0.379, 0.387, 0.394, 0.402, 0.410,
+                 0.394, 0.395, 0.396, 0.397, 0.398, 0.398, 0.399, 0.400, 0.401, 0.401, 0.402))
+
+# Tidy the table
+table_b2 <- table_b2 %>%
+  distinct(mc, .keep_all = TRUE) %>%  # Remove the duplicate rows
+  pivot_longer(-mc) %>%
+  separate(name, into = c("name", "reagent_lot"), sep = "\\.") %>%
+  pivot_wider(names_from = name, values_from = value) %>%
+  mutate(reagent_lot = str_replace(reagent_lot, "lot", "Lot ")) %>%
+  mutate_if(is.character, factor) %>%
+  arrange(reagent_lot)
+
+# Calculate the trial LoD and the bias at each concentration
+table_b2 <- table_b2 %>%
+  mutate(trial_LoD = round(LoB + c_p * SD_WL, 2),
+         bias = round(trial_LoD - mc, 2)) 
+
+table_b2
+
+# LoDs are where there is no bias
+table_b2 %>%
+  filter(!bias) %>%
+  select(reagent_lot, LoD = trial_LoD)
+
 ```
