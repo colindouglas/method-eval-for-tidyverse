@@ -12,15 +12,18 @@ probit_model <- glm(formula = df$y ~ df$x, family = quasibinomial(link = "probit
 intercept <- coef(probit_model)[[1]]
 slope <- coef(probit_model)[[2]]
 
-# Probit inverse link function (I think?)
-invlink_fn <- function(x) pnorm(x * slope + intercept)
+prediction <- tibble(x = c(0.001, x_variable)) %>%
+  mutate(y = predict(probit_model, newdata = ., type = "response"))
 
 
 # The geom_smooth() layer is correct, according to my reference
 # The stat_function _should_ be identical but it isn't
 plot <- df %>%
   ggplot(aes(x, y)) +
-  geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
-              method = "glm", method.args = list(family = quasibinomial(link = "probit"))) 
+  geom_point() +
+  geom_line(data = prediction) +
+  scale_x_log10(limits = c(0.001, 0.5))
 
-ggplot_build(plot)
+
+print(plot + geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
+                     method = "glm", method.args = list(family = quasibinomial(link = "probit"))))
