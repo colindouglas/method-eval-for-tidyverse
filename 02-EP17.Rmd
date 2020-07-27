@@ -402,7 +402,7 @@ table_c2
 ```
 
 ### Tidy Table Cleanup
-```{r Table C2}
+```{r Tidy Table Cleanup for Appendix C}
 
 tables_c12 <- table_c1 %>%
   bind_rows(table_c2) %>% 
@@ -412,40 +412,77 @@ tables_c12 <- table_c1 %>%
   pivot_wider(names_from = name, values_from = value) %>%
   mutate(reagent_lot = str_replace(reagent_lot, "lot", "Lot ")) %>%
   arrange(reagent_lot, concentration)
+
+glimpse(tables_c12)
 ```
 
 
 ### Table C3
+Summaries of the Probit Analysis Results
 ```{r Table C3}
 
-df <- tables_c12 %>%
-  filter(reagent_lot == "Lot 2")
+table_c3 <- tables_c12 %>%
+  group_by(reagent_lot) %>%
+  filter(concentration > 0) %>%
+  summarize(probit_model = list(
+    glm(formula = hit_rate ~ log10(concentration), 
+        family = quasibinomial(link = "probit"))),
+    .groups = "drop") %>%
+  mutate(intercept = map_dbl(probit_model, ~ coef(.)[[1]]),
+         slope = map_dbl(probit_model, ~ coef(.)[[2]]),
+         LoD = 10^((qnorm(1-alpha) - intercept) / slope)) 
 
-probit_model <- glm(formula = df$hit_rate ~ df$concentration, family = quasibinomial(link = "probit"))
-
-intercept <- coef(probit_model)[[1]]
-slope <- coef(probit_model)[[2]]
-
-predict(probit_model, newdata = tibble("concentration" = 0.05), type = "response")
-
-invlink_fn <- function(x) pnorm(x * slope + intercept)
-
-df %>%
-  ggplot(aes(x = concentration, y = hit_rate)) +
-  geom_point() +
-  scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1), limits = c(0.001, 10)) +
-  geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
-              method = "glm", method.args = list(family = quasibinomial(link = "probit"))) +
-  stat_function(fun = invlink_fn, color = "red") +
-  geom_hline(yintercept = 0.95, lty = 2) +
-  geom_vline(xintercept = 0.033, lty = 2) +
-  coord_cartesian(xlim = c(0.001, 0.5))
+table_c3 %>%
+  select(reagent_lot, LoD)
+```
 
 
-p <- ggplot(df, aes(x = concentration, y = hit_rate)) + 
-    geom_smooth(formula = y ~ x, color = "black", fullrange = TRUE,
-              method = "glm", method.args = list(family = quasibinomial(link = "probit")))
+```{r Set up for probit figures}
 
+plot_probit <- function(lot) {
+  
+  inv_probit_fn <- function(x) {
+    
+    intercept <- table_c3$intercept[table_c3$reagent_lot == lot]
+    slope <- table_c3$slope[table_c3$reagent_lot == lot]
+    
+    10^((qnorm(1-alpha) - intercept) / slope)
+  }
+  
+  tables_c12 %>%
+    filter(reagent_lot == lot, concentration > 0) %>%
+    ggplot(aes(x = concentration, y = hit_rate)) +
+    geom_point() +
+    scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1), limits = c(0.001, 1), name = "Concentration") +
+    scale_y_continuous(name = "Probability", breaks = seq(0, 1, by = 0.1)) +
+    geom_smooth(formula = y ~ x, color = "firebrick", fullrange = TRUE,
+                method = "glm", method.args = list(family = quasibinomial(link = "probit"))) +
+    geom_hline(yintercept = 1-alpha, lty = 2) +
+    geom_vline(xintercept = inv_probit_fn(1-alpha), lty = 2)
+}
 
+```
+
+### Figure C1
+Probit Analysis for Reagent Lot 1
+```{r Figure C1}
+
+plot_probit("Lot 1")
+
+```
+
+### Figure C2
+Probit Analysis for Reagent Lot 2
+```{r Figure C2}
+
+plot_probit("Lot 2")
+
+```
+
+### Figure C3
+Probit Analysis for Reagent Lot 3
+```{r Figure C3}
+
+plot_probit("Lot 3")
 
 ```
