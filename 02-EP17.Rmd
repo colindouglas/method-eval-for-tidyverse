@@ -9,9 +9,12 @@ Simple, elegant code with minimal duplication that can be adapted for other uses
 Evaluation of Limits of Blank and Detection by the Classical Approach
 
 ```{r Setup, echo = FALSE}
-suppressPackageStartupMessages(
+suppressPackageStartupMessages({
   library(tidyverse)
-)
+})
+
+options(dplyr.summarise.inform = FALSE)
+  
 ```
 
 ### Table A1
@@ -425,12 +428,12 @@ table_c3 <- tables_c12 %>%
   group_by(reagent_lot) %>%
   filter(concentration > 0) %>%
   summarize(probit_model = list(
-    glm(formula = hit_rate ~ log10(concentration), 
+    glm(formula = hit_rate ~ log(concentration), 
         family = quasibinomial(link = "probit"))),
     .groups = "drop") %>%
   mutate(intercept = map_dbl(probit_model, ~ coef(.)[[1]]),
          slope = map_dbl(probit_model, ~ coef(.)[[2]]),
-         LoD = 10^((qnorm(1-alpha) - intercept) / slope)) 
+         LoD = exp((qnorm(1-alpha) - intercept) / slope)) 
 
 table_c3 %>%
   select(reagent_lot, LoD)
@@ -446,19 +449,20 @@ plot_probit <- function(lot) {
     intercept <- table_c3$intercept[table_c3$reagent_lot == lot]
     slope <- table_c3$slope[table_c3$reagent_lot == lot]
     
-    10^((qnorm(1-alpha) - intercept) / slope)
+    exp((qnorm(1-alpha) - intercept) / slope)
   }
   
   tables_c12 %>%
     filter(reagent_lot == lot, concentration > 0) %>%
     ggplot(aes(x = concentration, y = hit_rate)) +
     geom_point() +
-    scale_x_log10(breaks = c(0.001, 0.01, 0.1, 1), limits = c(0.001, 1), name = "Concentration") +
-    scale_y_continuous(name = "Probability", breaks = seq(0, 1, by = 0.1)) +
-    geom_smooth(formula = y ~ x, color = "firebrick", fullrange = TRUE,
+    # We fit to y ~ x because the scale_x_log10 is taken care of the log transformation
+    geom_smooth(formula = y ~ x, color = "firebrick", fullrange = TRUE, 
                 method = "glm", method.args = list(family = quasibinomial(link = "probit"))) +
     geom_hline(yintercept = 1-alpha, lty = 2) +
-    geom_vline(xintercept = inv_probit_fn(1-alpha), lty = 2)
+    geom_vline(xintercept = inv_probit_fn(1-alpha), lty = 2) +
+    scale_x_log10(breaks = 10^(0:-3), limits = c(0.001, 1), name = "Concentration") +
+    scale_y_continuous(name = "Probability", breaks = seq(0, 1, by = 0.1))
 }
 
 ```
@@ -484,5 +488,171 @@ Probit Analysis for Reagent Lot 3
 ```{r Figure C3}
 
 plot_probit("Lot 3")
+
+```
+
+## Appendix D
+Evaluation of Limit of Quantitation
+
+### Table D1
+Limit of Quantitation as Functional Sensitivity
+
+```{r Table D1}
+
+# Text lacks precision, so CVs don't agree
+table_d1 <- tibble(
+  sample_pool_id = paste("Pool ", 1:9),
+  mean.lot1 = c(0.040, 0.053, 0.080, 0.111, 0.137, 0.164, 0.190, 0.214, 0.245),
+  sd.lot1   = c(0.016, 0.016, 0.016, 0.017, 0.014, 0.012, 0.011, 0.016, 0.013),
+  cv_calc.lot1 = sd.lot1/mean.lot1 * 100,  # CV, calculated using the reported values of mean and SD
+  cv.lot1   = c(40.2,  29.6,  19.5,  15.1,  10.0,  7.4,   6.0,   7.5,   5.4), #  CV, as reported in text
+  mean.lot2 = c(0.041, 0.047, 0.077, 0.106, 0.136, 0.159, 0.182, 0.205, 0.234),
+  sd.lot2   = c(0.018, 0.014, 0.012, 0.019, 0.016, 0.015, 0.015, 0.016, 0.014),
+  cv_calc.lot2   = sd.lot2/mean.lot2 * 100,
+  cv.lot2   = c(44.1,  28.8,  15.1,  17.8,  11.4,  9.2,   8.4,   7.8,   6.2)
+)
+```
+
+
+### Tidy Table Cleanup
+```{r Tidy Table Cleanup, table D1}
+
+table_d1 <- table_d1 %>%
+  pivot_longer(-sample_pool_id) %>%
+  separate(name, into = c("name", "reagent_lot"), sep = "\\.") %>%
+  pivot_wider(names_from = name, values_from = value) %>%
+  mutate(reagent_lot = str_replace(reagent_lot, "lot", "Lot ")) %>%
+  mutate_if(is.character, factor) %>%
+  arrange(reagent_lot, sample_pool_id)
+
+glimpse(table_d1)
+
+```
+
+### Figure D1
+Precision Profiles of Within Laboratory Precision (as %CV) vs. Measurand Concentration With a Power Function Model Fit Overlaid
+
+```{r Figure D1}
+
+accuracy_goal <- 10
+
+# Picking the initial values is more of an art than a science
+power_fits <- table_d1 %>%
+  group_by(reagent_lot) %>%
+  summarize(fit = list(lm(log(cv) ~ log(mean))),
+            .groups = "drop") %>%
+  mutate(C_0 = map_dbl(fit, ~ exp(coef(.)[[1]])),
+         C_1 = map_dbl(fit, ~ coef(.)[[2]]),
+         LoD = (accuracy_goal/C_0)^(1/C_1))
+
+
+# Use a hacky map to make multiple stat_function layers
+fit_lines <- pmap(
+  list(c("solid", "dashed"),
+       power_fits$C_0, 
+       power_fits$C_1),
+  ~ stat_function(lty = ..1, fun = function(x) { ..2 * x^..3 })
+)
+
+table_d1 %>%
+  ggplot(aes(x = mean, y = cv)) +
+  geom_point(aes(shape = reagent_lot, color = reagent_lot), size = 3) +
+  scale_shape_manual(name = "", values = c("diamond", "square"), guide = FALSE) +
+  scale_color_discrete(name = "", guide = FALSE) +
+  scale_x_continuous(name = "[Troponin I] (ng/mL)", breaks = seq(0.025, 0.225, by = 0.05)) +
+  scale_y_continuous(name = "Within-Lab Precision (%CV)", breaks = seq(0, 50, by = 10)) +
+  fit_lines
+
+power_fits %>%
+  select(-fit) 
+
+```
+
+### Table D2
+Observed Means and SDs for Low Level Samples from Appendix A data
+```{r Table D2}
+
+reference_values <- tibble(
+  sample = paste("Low", 1:5),
+  reference_value = c(26.1, 16.9, 13.1, 20.4, 27.8)
+)
+
+table_d2 <- tables_a14 %>%
+  # Between examples, the author changed the name of the reagent lots
+  mutate(reagent_lot = recode(reagent_lot, 
+                              "Lot 1" = "Reagent A", 
+                              "Lot 2" = "Reagent B")) %>%
+  group_by(reagent_lot, sample) %>%
+  summarize(observed_mean = mean(value),
+            observed_sd = sd(value)) %>%
+  inner_join(reference_values, by = "sample") %>%
+  select(reagent_lot, sample, reference_value, observed_mean, observed_sd)
+
+table_d2
+
+```
+
+### Table D3
+TE Calculations for Low Level Samples from Appendix A Data
+```{r Table D3}
+
+table_d3 <- table_d2 %>%
+  mutate(bias = observed_mean - reference_value,
+         TE = (abs(bias) + 2 * observed_sd)/reference_value * 100) %>%
+  select(reagent_lot, reference_value, sample, bias, TE)
+
+table_d3 %>%
+  group_by(sample) %>%
+  summarize(average_TE = mean(TE))
+
+```
+
+### Figure D2
+Plot of Calculated TE vs. Reference Value for Low Level Samples by Two Reagent Lots, With Linear Regression Model Fit and Extrapolation
+
+```{r Figure D2}
+
+table_d3 %>%
+  ggplot(aes(x = reference_value, y = TE)) +
+  geom_point(aes(color = reagent_lot, shape = reagent_lot)) +
+  geom_smooth(method = "lm", formula = y ~ x, level = 0, color = "black", fullrange = TRUE) +
+  geom_hline(yintercept = 21.6) +
+  scale_x_continuous(name = "[Estradiol] (pg/mL)", limits = c(10, 45), breaks = seq(10, 45, 5)) +
+  scale_y_continuous(name = "Total Error (%)", limits = c(0, 60), breaks = seq(0, 60, 10)) +
+  scale_color_discrete(name = "") +
+  scale_shape_manual(name = "", values = c("square", "circle"))
+
+
+```
+
+###  Table D4
+Observed Results for Reagent Lot A
+
+```{r Table D4}
+
+table_d4 <- tibble(
+  day = rep(1:3, each = 3),
+  replicate = rep(1:3, times = 3),
+  `Pool 1` = c(36.7, 37.9, 38.3, 36.8, 33.5, 39.2, 41.3, 37.9, 34.9),
+  `Pool 2` = c(49.9, 50.0, 48.1, 47.8, 43.9, 45.6, 45.4, 51.5, 45.8),
+  `Pool 3` = c(46.1, 43.1, 39.4, 47.3, 45.8, 44.8, 44.6, 47.3, 38.9),
+  `Pool 4` = c(33.3, 34.2, 34.5, 43.1, 34.0, 37.1, 35.3, 32.4, 36.0),
+  `Pool 5` = c(42.9, 41.8, 43.8, 46.3, 43.3, 46.0, 42.6, 41.1, 42.8))
+
+```
+
+###  Table D5
+Observed Results for Reagent Lot B
+
+```{r Table D5}
+
+table_d5 <- tibble(
+  day = rep(1:3, each = 3),
+  replicate = rep(1:3, times = 3),
+  `Pool 1` = c(38.5, 41.0, 43.2, 36.8, 42.1, 35.8, 36.8, 44.1, 39.5),
+  `Pool 2` = c(45.8, 47.8, 46.6, 46.9, 51.3, 50.5, 44.3, 47.5, 52.4),
+  `Pool 3` = c(46.7, 43.6, 42.4, 46.5, 47.9, 42.7, 42.1, 43.4, 44.7),
+  `Pool 4` = c(35.5, 40.0, 34.0, 32.9, 33.1, 38.6, 36.2, 41.4, 33.0),
+  `Pool 5` = c(42.0, 44.1, 43.2, 46.6, 45.5, 43.5, 41.4, 48.2, 45.7))
 
 ```
