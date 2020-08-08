@@ -674,8 +674,82 @@ table_e1 <- tibble(
 )
 
 manufacturer_LoB <- 20  # ng/mL
-below_LoD <- sum(table_e1$Blanks > manufacturer_LoB) / length(table_e1$Blanks) # * 100%
+below_LoB <- sum(table_e1$Blanks <= manufacturer_LoB) / length(table_e1$Blanks)       # * 100%
+above_LoD <- sum(table_e1$Positives > manufacturer_LoB) / length(table_e1$Positives) # * 100%
+```
 
+### Section 7, Table 1
+```{r Compare against table 1 from section 7}
 # The table in 7.1 is modified from 10.1373/clinchem.2003.029983 
+# I have no idea how to reproduce it, despite a few day's worth of trying
+# Instead, I will simply reproduce it
+
+sec7_1_t1 <- tibble(
+  N = c(20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 250, 300, 400,  500, 1000),
+  obs_proportion_boundary = c(0.85, 0.87, 0.88, 0.88, 0.90, 0.90, 0.90, 0.91, 0.91, 0.92, 0.92, 0.92,  0.93, 0.93, 0.93, 0.94)
+)
+
+# Find the first row in Table 1 from Section 7 where N is equal to or greater than the number of measurements in the study
+# e.g., the greater of the bracketing N values
+limit <- sec7_1_t1 %>%
+  filter(N >= nrow(table_e1)) %>%
+  head(1) %>%
+  pull(obs_proportion_boundary)
+
+# Confirm that the acceptance criteria are met
+if ((below_LoB > limit) &    # More blanks are below the limit than the minimum allowed
+    (above_LoD > limit) ) {  # More positives are above the limit than the minimum allowed
+    message("Limit of blank and limit of detection claims are verified")
+} 
+
+```
+
+## Appendix F
+Verification of Limit of Quantification Claim
+
+### Table F1
+Observed Results for LoQ Verification (Units are pg/mL)
+
+```{r Table F1}
+table_f1 <- tibble(
+  day = rep(c(1, 2, 3), times = 3),
+  `Sample 1` = c(47.8, 44.6, 47.1, 50.8, 48.2, 52.5, 49.4, 52.0, 46.3),
+  `Sample 2` = c(47.3, 48.8, 47.6, 54.7, 50.7, 50.8, 52.5, 50.4, 49.6),
+  `Sample 3` = c(49.7, 51.2, 57.3, 54.6, 49.3, 53.3, 58.0, 49.5, 52.2),
+  `Sample 4` = c(50.4, 49.5, 44.0, 51.5, 51.4, 49.8, 46.1, 45.7, 50.9),
+  `Sample 5` = c(53.7, 52.7, 55.9, 55.1, 55.5, 57.3, 51.8, 48.8, 51.7)
+)
+
+te_limit = 0.15  # * 100%
+
+table_f1_limits <- tibble(
+  sample = paste("Sample", 1:5),
+  target_value = c(46.4, 45.8, 49.1, 46.3, 49.7),
+  lower_limit = round(target_value * (1-te_limit), digits = 1),
+  upper_limit = round(target_value * (1+te_limit), digits = 1)
+)
+```
+
+```{r Tidy Table Cleanup}
+table_f1 <- table_f1 %>%
+  pivot_longer(cols = starts_with("Sample"), names_to = "sample", values_to = "value") %>%
+  left_join(table_f1_limits, by = "sample")
+```
+
+```{r Calculate Outliers}
+
+table_f1 <- table_f1 %>%
+  mutate(outlier = value < lower_limit | value > upper_limit)
+
+meets_TE_goal <- sum(!table_f1$outlier) / nrow(table_f1)
+
+# Reference table 1 in section 7 again to find acceptable limit
+limit <- sec7_1_t1 %>%
+  filter(N >= nrow(table_f1)) %>%
+  head(1) %>%
+  pull(obs_proportion_boundary)
+
+# Confirm that the acceptance criteria are met
+if (meets_TE_goal > limit) message("Limit of quantification claim is verified")
 
 ```
