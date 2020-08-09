@@ -1,3 +1,11 @@
+```{r Setup, echo = FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+})
+
+options(dplyr.summarise.inform = FALSE)
+```
+
 # EP17 - Detection Capabilities
 Evaluation of Detection Capability for Clinical Laboratory Measurement Procedures
 
@@ -8,14 +16,7 @@ Simple, elegant code with minimal duplication that can be adapted for other uses
 ## Appendix A
 Evaluation of Limits of Blank and Detection by the Classical Approach
 
-```{r Setup, echo = FALSE}
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
 
-options(dplyr.summarise.inform = FALSE)
-  
-```
 
 ### Table A1
 Observed Blank Sample Results for Reagent Lot 1 (Units are pg/mL)

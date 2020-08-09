@@ -1,0 +1,151 @@
+```{r Setup, echo = FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+})
+
+options(dplyr.summarise.inform = FALSE)
+```
+
+# EP05 - Precision
+Evaluation of Precision of Quantitative Measurement Procedures
+
+This work is based on EP05-A3, October 2014
+
+Simple, elegant code with minimal duplication that can be adapted for other uses.
+
+## Appendix A
+Single-Site Study
+
+
+### Table A1
+Glucose Precision Evaluation Measurements (mg/dL)
+```{r Table A1}
+
+# Table A1. Glucose Precision Evaluation Measurements (mg/dL)
+table_a1 <- tibble(
+  day = 1:20,
+  run1.rep1 = c(242, 243, 247, 249, 246, 244, 241, 245, 243, 244, 252, 249, 242, 246, 247, 240, 241, 244, 241, 247),
+  run1.rep2 = c(246, 242, 239, 241, 242, 245, 246, 245, 239, 246, 251, 248, 240, 249, 248, 238, 244, 244, 239, 240),
+  run2.rep1 = c(245, 238, 241, 250, 243, 251, 245, 243, 244, 247, 247, 251, 251, 248, 245, 239, 245, 237, 247, 245),
+  run2.rep2 = c(246, 238, 240, 245, 240, 247, 247, 245, 245, 239, 241, 246, 245, 240, 246, 242, 248, 242, 245, 242))
+
+```
+
+```{r Table A1 Normalization}
+
+table_a1 <- table_a1 %>%
+  pivot_longer(cols = starts_with("run"), names_to = "run_rep", values_to = "result") %>%
+  separate(run_rep, sep = "\\.", into = c("run", "rep")) %>%
+  mutate_at(vars("run", "rep"), ~ str_remove(., "(run)|(rep)")) %>%
+  mutate_at(vars(-result), factor)
+
+glimpse(table_a1)
+
+```
+
+### Figure A1
+Glucose Precision Evaluation Results
+```{r Figure A1}
+
+table_a1 %>%
+  ggplot(aes(x = day, y = result)) +
+  geom_point(aes(color = run, shape = run)) +
+  scale_x_discrete(name = "Test Day", breaks = seq(0, 20, by = 4)) +
+  scale_y_continuous(name = "Glucose, mg/dL", breaks = seq(236, 254, by = 2)) +
+  scale_color_discrete(name = "", labels = c("Morning Run", "Afternoon Run")) +
+  scale_shape_manual(name = "", values = c("square", "circle"), labels = c("Morning Run", "Afternoon Run"))
+
+```
+
+
+### Table A2
+ANOVA Summary Table for the Glucose Example
+
+```{r Table A2}
+table_a2 <- table_a1 %>%
+  aov(result ~ day + day:run, data = .) %>%
+  broom::tidy() %>%
+  select(source = term, SS = sumsq, DF = df, MS = meansq) %>%
+  column_to_rownames(var = "source")
+
+table_a2
+```
+
+### Equations A1-A9
+
+```{r Equations A1-A9}
+x_bar <- mean(table_a1$result)
+
+MS_error <- table_a2["Residuals", "MS"]
+MS_run <- table_a2["day:run", "MS"]
+MS_day <- table_a2["day", "MS"]
+
+DF_error <- table_a2["Residuals", "DF"]
+DF_run <- table_a2["day:run", "DF"]
+DF_day <- table_a2["day", "DF"]
+
+N <- nrow(table_a1)
+n_rep <- nlevels(table_a1$rep)
+n_run <- nlevels(table_a1$run)
+n_day <- nlevels(table_a1$day)
+
+# If any of these terms are less than zero, carry them forward as zero
+V_error <- MS_error  # A1
+V_run <- max((MS_run - MS_error)/n_rep, 0)  # A2
+V_day <- max((MS_day - MS_run)/(n_run*n_rep), 0)  # A3
+
+S_R <- sqrt(V_error)  # A4
+S_WL <- sqrt(V_day + V_run + V_error)  # A5
+
+# Only valid for a 20 x 2 x 2 study
+alpha_error <- 0.5
+alpha_run <- 0.25
+alpha_day <- 0.25
+
+df_R <- N - n_day*n_run  # A6
+
+# A7
+df_WL <- round(  
+  ((alpha_day * MS_day) + (alpha_run * MS_run) + (alpha_error * MS_error))^2 
+  / 
+  ((alpha_day * MS_day)^2/DF_day + (alpha_run * MS_run)^2/DF_run + (alpha_error * MS_error)^2/DF_error)
+)
+
+CV_R <- S_R / x_bar * 100  # A8
+CV_WL = S_WL / x_bar * 100  # A9
+
+tibble(
+  `Sample Description` = "Patient Pool",
+  `Mean (mg/dL)` = x_bar,
+  `Repeatability` = sprintf("%.2f (%.1f%%)", S_R, CV_R),
+  `Within-Laboratory Precision` = sprintf("%.2f (%.1f%%)", S_WL, CV_WL)
+) 
+```
+
+### Table A3
+Inputs for calculating 95% CIs for the Glucose Example
+
+```{r Table A3}
+alpha <- 0.05
+
+table_a3 <- tibble(
+  value = c("Repeatability", "Within-Laboratory Reproducibility"),
+  S = c(S_R, S_WL),
+  DF = c(df_R, df_WL),
+  chisq_lower = qchisq(1-alpha/2, DF),
+  chisq_upper = qchisq(alpha/2, DF))
+
+table_a3 
+
+table_a3 %>%
+  mutate(S_lower = S * sqrt(DF/chisq_lower),  # A10 and A11
+         S_upper = S * sqrt(DF/chisq_upper),
+         CV_lower = S_lower / x_bar * 100,
+         CV_upper = S_upper / x_bar * 100,
+         CV_range = sprintf("%.1f%% - %.1f%%", CV_lower, CV_upper)) %>%
+  select(value | starts_with("S") | starts_with("CV"))
+
+# There are some rounding errors, the text reports 0.95% but without rounding, the calculated value is 0.944%
+```
+
+
