@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ```{r Setup, echo = FALSE}
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -113,7 +118,7 @@ df_WL <- round(
 )
 
 CV_R <- S_R / x_bar * 100  # A8
-CV_WL = S_WL / x_bar * 100  # A9
+CV_WL <- S_WL / x_bar * 100  # A9
 
 tibble(
   `Sample Description` = "Patient Pool",
@@ -147,7 +152,7 @@ table_a3 %>%
          CV_lower = S_lower / x_bar * 100,
          CV_upper = S_upper / x_bar * 100,
          CV_range = sprintf("%.1f%% - %.1f%%", CV_lower, CV_upper)) %>%
-  select(value | starts_with("S") | starts_with("CV"))
+  select(value, starts_with("S"), CV_range)
 
 # There is a rounding error in this table, the text reports 0.95% but without rounding, the calculated value is 0.944%
 ```
@@ -155,7 +160,8 @@ table_a3 %>%
 ## Appendix B
 CA19-9 Precision Evaluation Measurements (kU/L). Six samples, P1 to Q6, where P signifies patient sample pool and "Q" signifies QC material.
 
-### Table B1
+### B1 - Overview
+#### Table B1
 ```{r Table B1}
 
 # I'm not mad about having to type all these dumb numbers in. Not mad at all
@@ -164,7 +170,7 @@ table_b1 <- tibble(
   sample = rep(c("P1", "P2", "Q3", "Q4", "P5", "Q6"), each = 25),
   `Site 1` = c(
     12.5,  11.8,  11.6,  11.6,  11.7,  12.2,  11.8,  11.6,  12.2,  11.5,  12.0,  11.9,  11.4,  
-    11.6,  11.9,  11.9,  11.1,  12.4,  11.3,  11.5,  13.3,  10.7,  10.3,  11.7,  11.9,   # P1
+    11.6,  11.9,  11.9,  11.1,  12.4,  11.3,  11.5,  13.3,  10.7,  10.3,  10.7,  11.9,   # P1
     45.0,  45.1,  42.4,  42.4,  42.5,  42.4,  41.7,  43.0,  41.8,  41.6,  45.1,  42.7,  41.6,  
     41.0,  42.2,  41.8,  44.4,  42.8,  41.4,  41.8,  41.2,  40.9,  41.1,  40.2,  40.9,   # P2
     59.0,  57.7,  58.1,  56.3,  55.6,  56.5,  56.3,  58.4,  57.3,  56.5,  57.7,  56.7,  58.6,  
@@ -179,14 +185,14 @@ table_b1 <- tibble(
     12.8,  12.8,  12.7,  13.2,  11.1,  11.4,  10.7,  11.0,  13.8,  11.4,  14.7,  13.7,  13.2, 
     13.2,  13.1,  13.6,  13.5,  12.8,  12.3,  12.0,  14.1,  12.8,  12.2,  15.8,  13.3,   # P1
     40.6,  39.3,  41.4,  40.3,  37.3,  38.2,  37.5,  38.7,  43.0,  40.7,  42.1,  41.3,  40.5,  
-    38.8,  39.9,  40.9,  40.7,  39.6,  40.1,  39.5,  40.8,  40.6,  41.4,  41.4,  39.7,   # P2
+    38.8,  39.9,  40.9,  40.7,  39.6,  40.1,  39.5,  40.8,  40.6,  41.4,  41.4,  37.3,   # P2
     53.9,  55.1,  54.9,  53.7,  51.3,  52.7,  54.4,  49.8,  51.4,  49.0,  55.1,  55.0,  54.1,  
     52.5,  54.5,  55.2,  56.1,  55.2,  55.8,  54.9,  54.5,  55.9,  51.7,  50.0,  54.2,   # Q3
     156.6, 157.7, 155.8, 160.8, 153.6, 162.7, 157.1, 156.1, 149.5, 157.0, 159.9, 163.8, 160.9, 
     164.4, 156.3, 162.2, 164.6, 161.5, 159.2, 157.9, 158.2, 162.9, 162.4, 159.6, 160.0,  # Q4
     380.0, 382.5, 368.5, 379.7, 361.7, 366.8, 371.7, 363.3, 379.1, 366.7, 375.1, 382.1, 371.3, 
     374.3, 370.1, 372.7, 376.1, 363.9, 371.4, 370.8, 365.7, 371.2, 387.5, 385.5, 367.3,  # P5
-    410.9, 416.3, 391.8, 390.7, 388.4, 401.2, 409.0, 397.0, 395.7, 384.1, 401.4, 411.9, 292.2, 
+    410.9, 416.3, 391.8, 390.7, 388.4, 401.2, 409.0, 397.0, 395.7, 384.1, 401.4, 411.9, 392.2, 
     409.3, 391.9, 395.9, 415.7, 400.5, 409.4, 390.8, 410.5, 399.7, 387.9, 398.9, 382.5), # Q6
   `Site 3` = c(
     12.2,  11.7,  11.6,  11.9,  11.6,  12.0,  11.7,  11.9,  12.1,  11.7,  12.0,  11.7,  11.5,  
@@ -196,7 +202,7 @@ table_b1 <- tibble(
     58.4,  57.9,  57.2,  56.4,  56.1,  56.4,  57.4,  57.9,  57.5,  55.9,  57.2,  57.7,  57.4,  
     56.3,  56.5,  57.5,  56.9,  55.6,  56.3,  56.1,  56.6,  56.3,  56.0,  55.7,  57.0,   # Q3
     171.2, 168.5, 168.8, 167.6, 170.5, 167.0, 169.4, 171.1, 168.8, 169.4, 168.1, 169.7, 173.5,
-    175.9, 167.8, 172.4, 167.8, 165.5, 165.9, 166.0, 166.0, 167.2, 166.6, 168.2, 168.8,  # Q4
+    174.9, 167.8, 172.4, 167.8, 165.5, 165.9, 166.0, 166.0, 167.2, 166.6, 168.2, 168.8,  # Q4
     390.3, 393.4, 388.1, 386.2, 378.1, 391.7, 384.3, 377.0, 380.4, 371.6, 380.6, 377.7, 375.2, 
     387.6, 373.2, 393.2, 375.4, 367.9, 378.1, 378.3, 387.9, 388.4, 381.8, 382.7, 383.7,  # P5
     434.3, 429.8, 425.1, 422.9, 417.8, 429.1, 425.6, 414.9, 419.6, 414.3, 417.9, 419.7, 431.0, 
@@ -205,11 +211,326 @@ table_b1 <- tibble(
 
 ```
 
-#### Normalization
+##### Normalization
 
 ```{r Table B1 Normalization}
 table_b1 <- table_b1 %>%
   pivot_longer(cols = starts_with("Site"), names_to = "site", values_to = "result") %>%
-  mutate(site = str_remove(site, "Site ")) %>%
+  mutate(sample = factor(sample, levels = c("P1", "P2", "Q3", "Q4", "P5", "Q6"))) %>%
   mutate_at(vars(-result), as.factor)
+```
+
+### B2 - Screen for Anomolies
+#### Figure B1
+Screen for Anomalies - All Samples. The vertical axis represents a robust Levey-Jennings scale.
+
+```{r Figure B1}
+
+table_b1 %>%
+  group_by(sample, site) %>%
+  mutate(deviation = (result - median(result)) / mad(result)) %>%  # This doesn't match up?
+  ggplot(aes(x = sample, y = deviation)) +
+  geom_jitter(height = 0) +
+  geom_hline(yintercept = c(-4, -3, 0, 3, 4), lty = 2, lwd = 0.25) +
+  facet_grid(~ site) +
+  scale_x_discrete(name = "") +
+  scale_y_continuous(name = "Deviation from Median in MAD Units", breaks = seq(-4, 4, by = 2))
+
+```
+
+#### Figure B2
+```{r Figure B2}
+
+table_b1 %>%
+  filter(sample == "P1") %>%
+  group_by(site) %>%
+  mutate(meas_n = 1:n()) %>%
+  ggplot(aes(x = meas_n, y = result)) +
+  geom_jitter(height = 0) +
+  facet_wrap(~ site) +
+  scale_x_continuous(name = "", breaks = seq(3, 24, by = 5), labels = paste0("D", 1:5)) +
+  scale_y_continuous(name = "CA19-9, kU/L - Sample P1", breaks = seq(9, 17, 2)) +
+  
+  # Add mean and Grubbs' line
+  stat_summary(geom = "hline", fun = mean, aes(x = 1, yintercept = ..y..)) +
+  stat_summary(geom = "hline", fun = ~ mean(.) + 3.135 * sd(.), aes(x = 1, yintercept = ..y..)) +
+  stat_summary(geom = "hline", fun = ~ mean(.) - 3.135 * sd(.), aes(x = 1, yintercept = ..y..)) +
+  
+  # Add median line and +/- 3, 4 MAD
+  stat_summary(geom = "hline", fun = median, aes(x = 1, yintercept = ..y..), lty = 2) +
+  stat_summary(geom = "hline", fun = ~ median(.) + 3 * mad(.), aes(x = 1, yintercept = ..y..), lty = 2, lwd = 0.25) +
+  stat_summary(geom = "hline", fun = ~ median(.) - 3 * mad(.), aes(x = 1, yintercept = ..y..), lty = 2, lwd = 0.25) +
+  stat_summary(geom = "hline", fun = ~ median(.) + 4 * mad(.), aes(x = 1, yintercept = ..y..), lty = 2, lwd = 0.25) +
+  stat_summary(geom = "hline", fun = ~ median(.) - 4 * mad(.), aes(x = 1, yintercept = ..y..), lty = 2, lwd = 0.25)
+
+```
+### B3 - Analysis of Variance
+#### Table B2
+
+```{r Table B2}
+
+variance_across_sites <- function(sample) {
+  
+  # Function to perform the variance component calculations, like Table B2 and the top section of Table B3
+  # sample: the name of the test sample, stored in a column called 'sample'
+  
+  # returns: a list with the following values:
+  #   sample: name of the sample (as passed in the function call)
+  #   mean: mean value of that sample
+  #   N: number of measurements in the dataset
+  #   df_R: degrees of freedom associated with quantifying the repeatability
+  #   V_error: variance associated with repeatability of the assay
+  #   %_error: V_error as a percentage of total variance
+  #   SD_error: standard deviation associated with repeatability of the assay
+  #   CV_error: standard deviation expressed as a percentage of mean
+  #   df_WL: degrees of freedom of within-laboratory precision estimate, calculated via Satterthwaite approximation
+  #   V_day, %_day, SD_day, CV_day: as above, except WRT the day-to-day variation of the assay
+  #   df_REP: degrees of freedom of reproducibility precision estimate, calculated via Satterthwaite approximation
+  #   V_site, %_site, SD_site, CV_site: as above, except WRT the site-to-site variation of the assay
+
+  df <- filter(table_b1, sample == (!! sample))  # We have to be explicit here so we compare the function parameter 'sample' to the column 'sample'
+  
+  aov_table <- df %>%
+    aov(result ~ site + site:day, data = .) %>%
+    broom::tidy() %>%
+    select(source = term, SS = sumsq, DF = df, MS = meansq) %>%
+    column_to_rownames(var = "source")
+  
+  x_bar <- mean(df$result)
+  
+  MS_error <- aov_table["Residuals", "MS"]
+  MS_day <- aov_table["site:day", "MS"]
+  MS_site <- aov_table["site", "MS"]
+  
+  DF_error <- aov_table["Residuals", "DF"]
+  DF_day <- aov_table["site:day", "DF"]
+  DF_site <- aov_table["site", "DF"]
+  
+  N <- nrow(df)
+  n_day <- nlevels(df$day)
+  n_site <- nlevels(df$site)
+  n_rep <- N / (n_day * n_site)
+  
+  # If any of these terms are less than zero, carry them forward as zero
+  V_error <- MS_error 
+  V_day <- max((MS_day - MS_error)/n_rep, 0) 
+  V_site <- max((MS_site - MS_day)/(n_day*n_rep), 0) 
+  
+  S_R <- sqrt(V_error) 
+  S_WL <- sqrt(V_day + V_error) 
+  S_REP <- sqrt(V_site + V_day + V_error)
+  
+  # Only valid for a 3 x 5 x 5 study
+  alpha_day <- 0.5
+  alpha_error <- 0.5
+  beta_site <- 0.25
+  beta_day <- 0.25
+  beta_error <- 0.5
+  
+  df_R <- N - n_site*n_day
+  
+  df_WL <- round(  
+    (alpha_day * MS_day + alpha_error * MS_error)^2 
+    / 
+    ((alpha_day * MS_day)^2/DF_day + (alpha_error * MS_error)^2/DF_error)
+  )
+  
+  df_REP <- round(  
+    ((beta_site * MS_site) + (beta_day * MS_day) + (beta_error * MS_error))^2 
+    / 
+    ((beta_site * MS_site)^2/DF_site + (beta_day * MS_day)^2/DF_day + (beta_error * MS_error)^2/DF_error)
+  )
+  
+  CV_R <- S_R / x_bar * 100
+  CV_WL <- S_WL / x_bar * 100
+  CV_REP <- S_REP / x_bar * 100
+  
+  list(
+    sample = sample,
+    mean = x_bar,
+    N = nrow(df),
+    df_R = df_R,
+    V_error = V_error,
+    `%_error` = V_error / (V_error + V_day + V_site) * 100,
+    SD_R = S_R,
+    CV_R = S_R/x_bar * 100,
+    df_WL = df_WL,
+    V_day = V_day,
+    `%_day` = V_day / (V_error + V_day + V_site) * 100,
+    SD_WL = S_WL,
+    CV_WL = S_WL/x_bar * 100,
+    df_REP = df_REP,
+    V_site = V_site,
+    `%_site` = V_site / (V_error + V_day + V_site) * 100,
+    SD_REP = S_REP,
+    CV_REP = S_REP/x_bar * 100
+  )
+}
+  
+samples <- levels(table_b1$sample)
+  
+table_b2 <- map_dfr(samples, ~ variance_across_sites(.))
+
+# The values for P5 don't match up with the text, but I can't find a mistake in the data
+table_b2 %>%
+  select(sample, mean, V_error, `%_error`, V_day, `%_day`, V_site, `%_site`)
+
+```
+
+#### Table B3
+##### Combined Dataset
+```{r Table B3, Combined Dataset}
+table_b2 %>%
+  select(sample, mean, SD_R, CV_R, SD_WL, CV_WL, SD_REP, CV_REP)
+```
+
+##### By Site
+```{r Single Site Variance Function}
+
+variance_at_single_site <- function(site, sample) {
+
+  # Function to perform the variance component calculations, like Table B3, at a single site
+  # sample: sample identifier, stored in a column called 'sample'
+  # site: site identifier, stored in a column called 'site'
+  
+  # returns: a list with the following values:
+  #   sample: name of the sample (as passed in the function call)
+  #   mean: mean value of that sample
+  #   N: number of measurements in the dataset
+  #   df_R: degrees of freedom associated with quantifying the repeatability
+  #   V_error: variance associated with repeatability of the assay
+  #   %_error: V_error as a percentage of total variance
+  #   SD_error: standard deviation associated with repeatability of the assay
+  #   CV_error: standard deviation expressed as a percentage of mean
+  #   df_WL: degrees of freedom of within-laboratory precision estimate, calculated via Satterthwaite approximation
+  #   V_day, %_day, SD_day, CV_day: as above, except WRT the day-to-day variation of the assay
+
+  df <- filter(table_b1, 
+               sample == (!! sample),
+               site == (!! site))
+  
+  aov_table <- df %>%
+    aov(result ~ day, data = .) %>%
+    broom::tidy() %>%
+    select(source = term, SS = sumsq, DF = df, MS = meansq) %>%
+    column_to_rownames(var = "source")
+  
+  x_bar <- mean(df$result)
+  
+  MS_error <- aov_table["Residuals", "MS"]
+  MS_day <- aov_table["day", "MS"]
+
+  DF_error <- aov_table["Residuals", "DF"]
+  DF_day <- aov_table["day", "DF"]
+
+  N <- nrow(df)
+  n_day <- nlevels(df$day)
+  n_rep <- N / n_day
+  
+  # If any of these terms are less than zero, carry them forward as zero
+  V_error <- MS_error 
+  V_day <- max((MS_day - MS_error)/n_rep, 0) 
+  
+  S_R <- sqrt(V_error) 
+  S_WL <- sqrt(V_day + V_error)
+  
+  # Only valid for a 5 x 5 study
+  alpha_day <- 0.5
+  alpha_error <- 0.5
+
+  df_R <- N - n_day
+  
+  df_WL <- round(  
+    ((alpha_day * MS_day) + (alpha_error * MS_error))^2 
+    / 
+    ((alpha_day * MS_day)^2/DF_day + (alpha_error * MS_error)^2/DF_error)
+  )
+  
+  CV_R <- S_R / x_bar * 100
+  CV_WL <- S_WL / x_bar * 100
+  
+  list(
+    site = site,
+    sample = sample,
+    mean = x_bar,
+    N = nrow(df),
+    df_R = df_R,
+    V_error = V_error,
+    `%_error` = V_error / (V_error + V_day) * 100,
+    SD_R = S_R,
+    CV_R = S_R/x_bar * 100,
+    df_WL = df_WL,
+    V_day = V_day,
+    `%_day` = V_day / (V_error + V_day) * 100,
+    SD_WL = S_WL,
+    CV_WL = S_WL/x_bar * 100
+  )
+}
+
+sample_site <- expand.grid(
+  unique(table_b1$sample),
+  unique(table_b1$site)
+)
+
+table_b3 <- pmap_dfr(sample_site, ~ variance_at_single_site(sample = ..1, site = ..2)) %>%
+  select(site, sample, mean, SD_R, CV_R, SD_WL, CV_WL) 
+
+```
+
+###### Site 1
+```{r Table B3, Site 1}
+
+filter(table_b3, site == "Site 1")
+
+```
+
+###### Site 2
+```{r Table B3, Site 2}
+
+filter(table_b3, site == "Site 2")
+
+```
+
+###### Site 3
+```{r Table B3, Site 3}
+
+filter(table_b3, site == "Site 3")
+
+```
+
+#### Table B4
+
+```{r Table B4}
+alpha <- 0.05
+
+means <- select(table_b2, sample, mean)
+
+# Holy moly this is ugly
+table_b2 %>%
+  mutate(SD_R_lower = SD_R * sqrt(df_R / qchisq(1-alpha/2, df_R)),
+         SD_R_upper = SD_R * sqrt(df_R / qchisq(alpha/2, df_R)),
+         SD_R_r = sprintf("%.3f - %.3f", SD_R_lower, SD_R_upper),
+         
+         CV_R_lower = SD_R_lower / mean * 100,
+         CV_R_upper = SD_R_upper / mean * 100,
+         CV_R_r = sprintf("%.1f%% - %.1f%%", CV_R_lower, CV_R_upper),
+         
+         SD_WL_lower = SD_WL * sqrt(df_WL / qchisq(1-alpha/2, df_WL)),
+         SD_WL_upper = SD_WL * sqrt(df_WL / qchisq(alpha/2, df_WL)),
+         SD_WL_r = sprintf("%.3f - %.3f", SD_WL_lower, SD_WL_upper),
+         
+         CV_WL_lower = SD_WL_lower / mean * 100,
+         CV_WL_upper = SD_WL_upper / mean * 100,
+         CV_WL_r = sprintf("%.1f%% - %.1f%%", CV_WL_lower, CV_WL_upper),
+         
+         SD_REP_lower = SD_REP * sqrt(df_REP / qchisq(1-alpha/2, df_REP)),
+         SD_REP_upper = SD_REP * sqrt(df_REP / qchisq(alpha/2, df_REP)),
+         SD_REP_r = sprintf("%.3f - %.3f", SD_REP_lower, SD_REP_upper),
+         
+         CV_REP_lower = SD_REP_lower / mean * 100,
+         CV_REP_upper = SD_REP_upper / mean * 100,
+         CV_REP_r = sprintf("%.1f%% - %.1f%%", CV_REP_lower, CV_REP_upper)) %>%
+  select(sample, df_R, SD_R, df_WL, SD_WL, df_REP, SD_REP)
+
+
 ```

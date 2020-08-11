@@ -289,7 +289,7 @@ fits <- table_b1 %>%
 # Presumably this is what the guideline means when it says 'done using a spreadsheet'
 # They differ from the coefficients reported in the guideline
 
-fits$poly_fit
+map(fits$poly_fit, ~ broom::tidy(.))
 
 # Lot 1 Reported:    0.3741 / 0.0149 / 0.0055
 # Lot 1 Calculated:  0.3756 / 0.0137 / 0.0056
