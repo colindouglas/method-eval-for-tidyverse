@@ -499,14 +499,16 @@ filter(table_b3, site == "Site 3")
 ```
 
 #### Table B4
-
+This doesn't match with the text!
 ```{r Table B4}
+
 alpha <- 0.05
 
 means <- select(table_b2, sample, mean)
 
-# Holy moly this is ugly
-table_b2 %>%
+# These numbers don't match up with the text!
+# There is likely a mistake in here somewhere, but I can't find it
+table_b4 <- table_b2 %>%
   mutate(SD_R_lower = SD_R * sqrt(df_R / qchisq(1-alpha/2, df_R)),
          SD_R_upper = SD_R * sqrt(df_R / qchisq(alpha/2, df_R)),
          SD_R_r = sprintf("%.3f - %.3f", SD_R_lower, SD_R_upper),
@@ -529,8 +531,61 @@ table_b2 %>%
          
          CV_REP_lower = SD_REP_lower / mean * 100,
          CV_REP_upper = SD_REP_upper / mean * 100,
-         CV_REP_r = sprintf("%.1f%% - %.1f%%", CV_REP_lower, CV_REP_upper)) %>%
-  select(sample, df_R, SD_R, df_WL, SD_WL, df_REP, SD_REP)
+         CV_REP_r = sprintf("%.1f%% - %.1f%%", CV_REP_lower, CV_REP_upper)) 
 
+table_b4 %>%
+  select(Sample = sample, 
+         `Repeatability SD` = SD_R_r, 
+         `Repeatability %CV` = CV_R_r, 
+         `Within-Lab Precision SD` = SD_WL_r, 
+         `Within Lab Precision %CV` = CV_WL_r, 
+         `Reproducibility SD` = SD_REP_r, 
+         `Reproducibility %CV` = CV_REP_r)
+
+```
+
+#### Figure B3
+
+```{r Figure B3}
+
+table_b4_long <- table_b4 %>%
+  select(sample, mean, 
+         starts_with("SD_"), starts_with("CV_"), 
+         -ends_with("_upper"), -ends_with("_lower"), 
+         -ends_with("_r", ignore.case = FALSE)) %>%
+  pivot_longer(cols = c(starts_with("CV_"), starts_with("SD_")), names_to = "type", values_to = "value")
+
+# Because variance is fit to a relatively uncommon function, we have to fit it 
+# by brute force, using nonlinear least squares nls()
+
+models <- table_b4_long %>%
+  mutate(Var = value^2) %>%
+  filter(str_detect(type, "SD_")) %>%
+  group_by(type) %>% 
+  do(model = list(
+    nls(data = .,
+        formula = log(Var) ~ C * log(A + B * mean),  # We rearrange this to make it play nice with nls()
+        start = c("A" = 0, "B" = 0.02, "C" = 1))  # Initial guesses for the parameters
+  )) %>%
+  mutate(coefficients = map(model, ~ coef(.))) %>%
+  unnest_wider(coefficients)
+
+table_b4_long %>%
+  filter(str_detect(type, "CV_")) %>%
+  mutate(type = type %>%
+           fct_recode(Repeatability = "CV_R", `Within-Laboratory Precision` = "CV_WL", Reproducibility = "CV_REP") %>%
+           fct_relevel("Repeatability", "Within-Laboratory Precision", "Reproducibility")) %>%
+  ggplot(aes(x = mean, y = value)) +
+  geom_point(aes(color = type, shape = type), size = 3) +
+  # Adding these functions in manually -- there may be a better way
+  # Function returns Var, CV = 100 * sqrt(Var)/mean
+  stat_function(fun = ~ 100*sqrt((models$A[[1]] + models$B[[1]] * .x)^models$C[[1]])/.x, color = "#F8766D") +
+  stat_function(fun = ~ 100*sqrt((models$A[[2]] + models$B[[2]] * .x)^models$C[[2]])/.x, color = "#619CFF") +
+  stat_function(fun = ~ 100*sqrt((models$A[[3]] + models$B[[3]] * .x)^models$C[[3]])/.x, color = "#00BA38") +
+  scale_x_continuous(breaks = c(12, 50, 150, 400), minor_breaks = c(), name = "CA19-9, kU/L (Log Scale)") +
+  scale_y_continuous(breaks = seq(0, 10, by = 2), name = "%CV") +
+  scale_color_discrete(name = "") +
+  scale_shape_manual(values = c("triangle", "circle", "square"), name = "") +
+  coord_trans(x = "log10")
 
 ```
